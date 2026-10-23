@@ -13,7 +13,6 @@ import android.widget.RemoteViews
 object WidgetUpdater {
 
     fun updateAll(context: Context) {
-        if (MediaWatcher.instance == null) MediaWatcher.snapshot(context)
         val mgr = AppWidgetManager.getInstance(context)
         mgr.getAppWidgetIds(ComponentName(context, PlayerWidget::class.java)).forEach { id ->
             mgr.updateAppWidget(id, buildPlayer(context, mgr.getAppWidgetOptions(id), id))
@@ -41,7 +40,6 @@ object WidgetUpdater {
     }
 
     fun buildPlayer(context: Context, options: Bundle?, widgetId: Int): RemoteViews {
-        if (MediaWatcher.instance == null) MediaWatcher.snapshot(context)
         val prefs = Prefs(context)
         val d = context.resources.displayMetrics.density
         val widthDp = widthDp(options, 250)
@@ -102,7 +100,6 @@ object WidgetUpdater {
     }
 
     fun buildMini(context: Context, options: Bundle?, widgetId: Int): RemoteViews {
-        if (MediaWatcher.instance == null) MediaWatcher.snapshot(context)
         val prefs = Prefs(context)
         val d = context.resources.displayMetrics.density
         val widthDp = widthDp(options, 250)

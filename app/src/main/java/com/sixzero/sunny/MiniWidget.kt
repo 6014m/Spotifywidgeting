@@ -8,8 +8,7 @@ import android.os.Bundle
 class MiniWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, mgr: AppWidgetManager, ids: IntArray) {
         ids.forEach { mgr.updateAppWidget(it, WidgetUpdater.buildMini(context, mgr.getAppWidgetOptions(it), it)) }
-        MediaWatcher.requestRebindIfNeeded(context)
-        MediaWatcher.instance?.rescan()
+        SessionWatcher.start(context)
     }
 
     override fun onAppWidgetOptionsChanged(context: Context, mgr: AppWidgetManager, id: Int, newOptions: Bundle) {

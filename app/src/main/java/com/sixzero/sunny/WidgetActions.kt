@@ -9,18 +9,9 @@ import android.content.Intent
 class WidgetActions : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
-        val watcher = MediaWatcher.instance
-        if (watcher != null) { watcher.transport(action); return }
-        // Service not bound: drive the session directly, then redraw.
-        MediaWatcher.requestRebindIfNeeded(context)
-        val c = MediaWatcher.snapshot(context) ?: return
-        val tc = c.transportControls
-        when (action) {
-            PLAY_PAUSE -> if (PlayerState.playing) tc.pause() else tc.play()
-            NEXT -> tc.skipToNext()
-            PREV -> tc.skipToPrevious()
-        }
-        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ WidgetUpdater.updateAll(context) }, 600)
+        SessionWatcher.start(context)
+        SessionWatcher.transport(action)
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({ WidgetUpdater.updateAll(context) }, 500)
     }
 
     companion object {

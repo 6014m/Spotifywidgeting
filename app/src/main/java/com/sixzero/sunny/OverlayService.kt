@@ -54,6 +54,7 @@ class OverlayService : Service() {
         instance = this
         wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
         startInForeground()
+        SessionWatcher.start(this)
         registerReceiver(screenReceiver, IntentFilter().apply {
             addAction(Intent.ACTION_SCREEN_OFF); addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT); addAction(Intent.ACTION_WALLPAPER_CHANGED)

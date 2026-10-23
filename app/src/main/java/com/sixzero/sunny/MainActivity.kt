@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         MediaWatcher.requestRebindIfNeeded(this)
-        MediaWatcher.instance?.rescan()
+        SessionWatcher.start(this)
         Wallpaper.invalidate()
         val s = StringBuilder()
         fun line(ok: Boolean, name: String, hint: String) = s.append(if (ok) "✓ $name\n" else "✗ $name — $hint\n")
@@ -68,8 +68,8 @@ class MainActivity : AppCompatActivity() {
         line(Wallpaper.readable, "All files access", "inverted text falls back to outline")
         line(prefs.calibrated, if (prefs.autoLocated) "Widget located automatically" else "Live layer positioned (manual)", "add the Sunny Player widget, go home once, or use the manual button")
         s.append('\n')
-        s.append(if (MediaWatcher.instance == null) "Listener: not connected (toggle notification access off and on)"
-                 else "Listener: connected, sessions seen: ${MediaWatcher.lastSeen.ifEmpty { listOf("none") }.joinToString()}")
+        s.append(if (!SessionWatcher.started) "Session watch: off (grant notification access)"
+                 else "Session watch: on, sessions seen: ${MediaWatcher.lastSeen.ifEmpty { listOf("none") }.joinToString()}")
         if (PlayerState.hasTrack) s.append("\nNow: ${PlayerState.title} — ${PlayerState.artist}${if (PlayerState.playing) " (playing)" else " (paused)"}")
         findViewById<TextView>(R.id.status).text = s
         refreshWidgets()
