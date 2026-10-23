@@ -9,6 +9,7 @@ class PlayerWidget : AppWidgetProvider() {
     override fun onUpdate(context: Context, mgr: AppWidgetManager, ids: IntArray) {
         ids.forEach { mgr.updateAppWidget(it, WidgetUpdater.buildPlayer(context, mgr.getAppWidgetOptions(it), it)) }
         MediaWatcher.requestRebindIfNeeded(context)
+        MediaWatcher.instance?.rescan()
     }
 
     override fun onAppWidgetOptionsChanged(context: Context, mgr: AppWidgetManager, id: Int, newOptions: Bundle) {

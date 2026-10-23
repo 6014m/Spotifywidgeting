@@ -37,6 +37,25 @@ class Prefs(context: Context) {
         get() = sp.getInt("vizAlpha", 200)
         set(v) = sp.edit().putInt("vizAlpha", v).apply()
 
+    var invertText: Boolean
+        get() = sp.getBoolean("invert", true)
+        set(v) = sp.edit().putBoolean("invert", v).apply()
+
+    /** Calibrated overlay rectangle in screen pixels; -1 means not calibrated. */
+    var rectLeft: Int
+        get() = sp.getInt("rl", -1)
+        set(v) = sp.edit().putInt("rl", v).apply()
+    var rectTop: Int
+        get() = sp.getInt("rt", -1)
+        set(v) = sp.edit().putInt("rt", v).apply()
+    var rectWidth: Int
+        get() = sp.getInt("rw", -1)
+        set(v) = sp.edit().putInt("rw", v).apply()
+    var rectHeight: Int
+        get() = sp.getInt("rh", -1)
+        set(v) = sp.edit().putInt("rh", v).apply()
+    val calibrated: Boolean get() = rectWidth > 0 && rectHeight > 0
+
     var vizMirror: Boolean
         get() = sp.getBoolean("vizMirror", true)
         set(v) = sp.edit().putBoolean("vizMirror", v).apply()

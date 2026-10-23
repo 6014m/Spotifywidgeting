@@ -115,5 +115,8 @@ object Art {
         return out
     }
 
+    /** 1x1 transparent bitmap for RemoteViews slots the overlay takes over. */
+    fun blank(): Bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+
     fun withAlpha(color: Int, alpha: Int): Int = (color and 0x00FFFFFF) or (alpha.coerceIn(0, 255) shl 24)
 }

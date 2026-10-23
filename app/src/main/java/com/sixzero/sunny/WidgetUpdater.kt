@@ -24,6 +24,7 @@ object WidgetUpdater {
 
     /** Cheap partial update: only the progress bar bitmap, every couple of seconds. */
     fun updateProgress(context: Context) {
+        if (OverlayService.active) return
         val mgr = AppWidgetManager.getInstance(context)
         val ids = mgr.getAppWidgetIds(ComponentName(context, PlayerWidget::class.java))
         if (ids.isEmpty()) return
@@ -44,6 +45,19 @@ object WidgetUpdater {
         val widthDp = widthDp(options, 250)
         val heightDp = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)?.takeIf { it > 0 } ?: 110
         val rv = RemoteViews(context.packageName, R.layout.widget_player)
+        val acc = accent(context)
+        val soft = if (prefs.artAccent) PlayerState.accentSoft else PlayerState.PEACH
+
+        if (OverlayService.active) {
+            // The overlay draws art/text/progress; the widget only keeps the tap targets.
+            val blank = Art.blank()
+            rv.setImageViewBitmap(R.id.art, blank)
+            rv.setImageViewBitmap(R.id.title, blank)
+            rv.setImageViewBitmap(R.id.artist, blank)
+            rv.setImageViewBitmap(R.id.progress, blank)
+            wireButtons(context, rv, acc, soft)
+            return rv
+        }
 
         // Album art — fixed 88dp box in the layout; render slightly larger for crispness.
         val artPx = (88 * d).toInt()
@@ -57,8 +71,6 @@ object WidgetUpdater {
         val textWidthPx = ((widthDp - 12 - 88 - 12) * d).toInt()
         val titleSize = (heightDp.coerceIn(100, 220) / 7.2f) * d
         val artistSize = (heightDp.coerceIn(100, 220) / 10f) * d
-        val acc = accent(context)
-        val soft = if (prefs.artAccent) PlayerState.accentSoft else PlayerState.PEACH
         val light = if (prefs.artAccent) PlayerState.accentLight else PlayerState.CREAM
         val title = if (PlayerState.hasTrack) PlayerState.title else "Nothing playing"
         val artist = if (PlayerState.hasTrack) PlayerState.artist else "Spotify"
@@ -71,17 +83,20 @@ object WidgetUpdater {
             ((widthDp - 12) * d).toInt(), (5 * d).toInt(),
             PlayerState.progress(SystemClock.elapsedRealtime()), acc))
 
+        wireButtons(context, rv, acc, soft)
+        return rv
+    }
+
+    private fun wireButtons(context: Context, rv: RemoteViews, acc: Int, soft: Int) {
         rv.setImageViewResource(R.id.play, if (PlayerState.playing) R.drawable.ic_pause else R.drawable.ic_play)
         rv.setInt(R.id.play, "setColorFilter", acc)
         rv.setInt(R.id.prev, "setColorFilter", soft)
         rv.setInt(R.id.next, "setColorFilter", soft)
-
         rv.setOnClickPendingIntent(R.id.prev, WidgetActions.pending(context, WidgetActions.PREV))
         rv.setOnClickPendingIntent(R.id.play, WidgetActions.pending(context, WidgetActions.PLAY_PAUSE))
         rv.setOnClickPendingIntent(R.id.next, WidgetActions.pending(context, WidgetActions.NEXT))
         rv.setOnClickPendingIntent(R.id.root, openPlayer(context))
         rv.setOnClickPendingIntent(R.id.art, openPlayer(context))
-        return rv
     }
 
     fun buildMini(context: Context, options: Bundle?, widgetId: Int): RemoteViews {

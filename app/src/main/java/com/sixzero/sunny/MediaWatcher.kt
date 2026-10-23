@@ -62,7 +62,7 @@ class MediaWatcher : NotificationListenerService() {
         } catch (e: SecurityException) {
             Log.w(TAG, "no session access yet", e)
         }
-        pickController(safeSessions())
+        rescan()
     }
 
     override fun onListenerDisconnected() {
@@ -76,6 +76,13 @@ class MediaWatcher : NotificationListenerService() {
         if (instance === this) instance = null
         main.removeCallbacks(tick)
         super.onDestroy()
+    }
+
+    /** Re-pick the session; called from the app and widgets when things look stale. */
+    fun rescan() {
+        val list = safeSessions()
+        lastSeen = list.map { it.packageName }
+        pickController(list)
     }
 
     private fun safeSessions(): List<MediaController> = try {
@@ -138,7 +145,7 @@ class MediaWatcher : NotificationListenerService() {
 
     private fun push() {
         WidgetUpdater.updateAll(this)
-        VisualizerService.onPlaybackChanged(this)
+        OverlayService.onStateChanged(this)
     }
 
     /** Transport controls used by the widget buttons. */
@@ -156,6 +163,8 @@ class MediaWatcher : NotificationListenerService() {
     companion object {
         private const val TAG = "MediaWatcher"
         @Volatile var instance: MediaWatcher? = null
+        /** Package names of the sessions seen on the last scan, for the debug readout. */
+        @Volatile var lastSeen: List<String> = emptyList()
 
         fun isEnabled(context: Context): Boolean {
             val flat = android.provider.Settings.Secure.getString(

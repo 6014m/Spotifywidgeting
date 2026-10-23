@@ -4,4 +4,5 @@
     <string name="widget_player_desc">Transparent now-playing with controls</string>
     <string name="widget_mini">Sunny Mini</string>
     <string name="widget_mini_desc">One-line now-playing strip</string>
+    <string name="accessibility_desc">Only used to know when the home screen is in front, so the overlay hides everywhere else. Reads no screen content.</string>
 </resources>
