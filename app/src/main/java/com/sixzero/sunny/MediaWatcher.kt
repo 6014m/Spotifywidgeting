@@ -172,6 +172,50 @@ class MediaWatcher : NotificationListenerService() {
             return flat.contains(context.packageName)
         }
 
+        /**
+         * Fallback used when the service isn't bound (aggressive ROMs kill it):
+         * reading sessions only needs the listener to be *enabled*, not running.
+         * Fills PlayerState from the best session and returns the controller.
+         */
+        fun snapshot(context: Context): MediaController? {
+            if (!isEnabled(context)) return null
+            val mgr = context.getSystemService(Context.MEDIA_SESSION_SERVICE) as MediaSessionManager
+            val list = try {
+                mgr.getActiveSessions(ComponentName(context, MediaWatcher::class.java))
+            } catch (e: SecurityException) { return null }
+            lastSeen = list.map { it.packageName }
+            val c = list.firstOrNull { it.packageName == "com.spotify.music" }
+                ?: list.firstOrNull { it.playbackState?.state == PlaybackState.STATE_PLAYING }
+                ?: list.firstOrNull { it.metadata != null } ?: return null
+            PlayerState.packageName = c.packageName
+            val m = c.metadata
+            if (m != null) {
+                PlayerState.title = m.getString(MediaMetadata.METADATA_KEY_TITLE) ?: ""
+                PlayerState.artist = m.getString(MediaMetadata.METADATA_KEY_ARTIST)
+                    ?: m.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST) ?: ""
+                PlayerState.durationMs = m.getLong(MediaMetadata.METADATA_KEY_DURATION)
+                val key = (m.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI) ?: "") + PlayerState.title + PlayerState.artist
+                if (key != PlayerState.artKey || PlayerState.art == null) {
+                    val art = m.getBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART)
+                        ?: m.getBitmap(MediaMetadata.METADATA_KEY_ART)
+                        ?: m.getBitmap(MediaMetadata.METADATA_KEY_DISPLAY_ICON)
+                    PlayerState.artKey = key
+                    PlayerState.art = art?.let { Art.square(it, 320) }
+                    PlayerState.updateAccent(PlayerState.art)
+                }
+            }
+            val st = c.playbackState
+            val now = SystemClock.elapsedRealtime()
+            PlayerState.playing = st?.state == PlaybackState.STATE_PLAYING
+            if (st != null) {
+                PlayerState.speed = if (st.playbackSpeed == 0f) 1f else st.playbackSpeed
+                val elapsed = now - (st.lastPositionUpdateTime.takeIf { it > 0 } ?: now)
+                PlayerState.positionMs = (st.position + if (PlayerState.playing) (elapsed * PlayerState.speed).toLong() else 0L).coerceAtLeast(0)
+                PlayerState.positionAtMs = now
+            }
+            return c
+        }
+
         /** Ask the system to (re)bind us if access is granted but the service isn't running. */
         fun requestRebindIfNeeded(context: Context) {
             if (instance != null || !isEnabled(context)) return
