@@ -94,10 +94,18 @@ class OverlayService : Service() {
         }
     }
 
+    private var currentLp: WindowManager.LayoutParams? = null
+
     private fun attach(lp: WindowManager.LayoutParams) {
         val v = ensureView()
+        val cur = currentLp
+        val same = attached && cur != null && cur.x == lp.x && cur.y == lp.y &&
+            cur.width == lp.width && cur.height == lp.height && cur.flags == lp.flags
+        if (same) return
         try {
+            lastLayoutAt = android.os.SystemClock.elapsedRealtime()
             if (attached) wm.updateViewLayout(v, lp) else { wm.addView(v, lp); attached = true }
+            currentLp = lp
         } catch (e: Exception) {
             android.util.Log.w(TAG, "overlay attach failed", e)
         }
@@ -105,8 +113,9 @@ class OverlayService : Service() {
 
     private fun detach() {
         val v = view ?: return
-        if (attached) try { wm.removeView(v) } catch (_: Exception) {}
+        if (attached) { lastLayoutAt = android.os.SystemClock.elapsedRealtime(); try { wm.removeView(v) } catch (_: Exception) {} }
         attached = false
+        currentLp = null
     }
 
     /** Decide whether the overlay should be up right now and apply it. */
@@ -130,7 +139,7 @@ class OverlayService : Service() {
         active = true
         if (!wasActive) WidgetUpdater.updateAll(this)   // widget drops its own art/text so nothing doubles up
         if (PlayerState.playing) startCapture() else stopCapture()
-        v.invalidate()
+        v.postInvalidate()
     }
 
     private fun calibrate() {
@@ -224,6 +233,8 @@ class OverlayService : Service() {
         @Volatile private var instance: OverlayService? = null
         /** True while the overlay is drawn; the widget then renders only its buttons. */
         @Volatile var active: Boolean = false
+        /** When we last added/moved/removed the overlay window, so HomeDetector can ignore the echo. */
+        @Volatile var lastLayoutAt: Long = 0
 
         fun canOverlay(context: Context): Boolean = Settings.canDrawOverlays(context)
         fun hasMic(context: Context): Boolean =

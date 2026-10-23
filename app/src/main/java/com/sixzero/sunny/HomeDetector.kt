@@ -41,7 +41,10 @@ class HomeDetector : AccessibilityService() {
                 }
                 if (home) scheduleLocate()
             }
-            AccessibilityEvent.TYPE_WINDOWS_CHANGED -> if (onHome) scheduleLocate()
+            AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
+                // Our own overlay attaching/detaching fires this too; don't rescan for that.
+                if (onHome && android.os.SystemClock.elapsedRealtime() - OverlayService.lastLayoutAt > 1200) scheduleLocate()
+            }
         }
     }
 
@@ -91,13 +94,15 @@ class HomeDetector : AccessibilityService() {
             val onScreen = r.width() > 0 && r.height() > 0 && r.left >= 0 && r.right <= bounds.width()
             if (onScreen) {
                 val prefs = Prefs(this)
+                var changed = !widgetVisible
                 if (r.left != prefs.rectLeft || r.top != prefs.rectTop || r.width() != prefs.rectWidth || r.height() != prefs.rectHeight) {
                     prefs.rectLeft = r.left; prefs.rectTop = r.top; prefs.rectWidth = r.width(); prefs.rectHeight = r.height()
                     prefs.autoLocated = true
+                    changed = true
                 }
                 widgetVisible = true
                 lastResult = "widget at ${r.left},${r.top} ${r.width()}x${r.height()}"
-                OverlayService.onStateChanged(this)
+                if (changed) OverlayService.onStateChanged(this)
                 return
             }
             lastResult = "widget found but off-screen (${r.left}..${r.right})"
@@ -105,8 +110,9 @@ class HomeDetector : AccessibilityService() {
             lastResult = "widget node not found in ${roots.map { it.packageName }.joinToString()}"
             retryLocate()
         }
+        val was = widgetVisible
         widgetVisible = false
-        OverlayService.onStateChanged(this)
+        if (was) OverlayService.onStateChanged(this)
     }
 
     /** Manual tree walk, since findAccessibilityNodeInfosByText skips some launchers' hosts. */
