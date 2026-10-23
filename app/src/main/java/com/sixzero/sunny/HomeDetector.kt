@@ -41,6 +41,10 @@ class HomeDetector : AccessibilityService() {
                 }
                 if (home) scheduleLocate()
             }
+            AccessibilityEvent.TYPE_VIEW_SCROLLED, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                // Page swipes and widget moves: follow the widget quickly, hide when it leaves.
+                if (onHome && (pkg == launcher || launchers.contains(pkg))) scheduleLocate(60)
+            }
             AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
                 // Our own overlay attaching/detaching fires this too; don't rescan for that.
                 if (onHome && android.os.SystemClock.elapsedRealtime() - OverlayService.lastLayoutAt > 1200) scheduleLocate()
@@ -48,10 +52,10 @@ class HomeDetector : AccessibilityService() {
         }
     }
 
-    private fun scheduleLocate() {
+    private fun scheduleLocate(delay: Long = 150) {
         retries = 0
         main.removeCallbacks(locate)
-        main.postDelayed(locate, 150)
+        main.postDelayed(locate, delay)
     }
 
     /** Try again a few times: the launcher's tree is often empty for a moment after a window change. */

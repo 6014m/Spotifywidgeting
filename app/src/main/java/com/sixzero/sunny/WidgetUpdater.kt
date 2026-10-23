@@ -48,23 +48,15 @@ object WidgetUpdater {
         val acc = accent(context)
         val soft = if (prefs.artAccent) PlayerState.accentSoft else PlayerState.PEACH
 
-        if (OverlayService.active) {
-            // The overlay draws art/text/progress; the widget only keeps the tap targets.
-            val blank = Art.blank()
-            rv.setImageViewBitmap(R.id.art, blank)
-            rv.setImageViewBitmap(R.id.title, blank)
-            rv.setImageViewBitmap(R.id.artist, blank)
-            rv.setImageViewBitmap(R.id.progress, blank)
-            wireButtons(context, rv, acc, soft)
-            return rv
-        }
+        val hidden = OverlayService.active   // overlay draws art/text/progress; keep sizes, drop the pixels
 
         // Album art — fixed 88dp box in the layout; render slightly larger for crispness.
         val artPx = (88 * d).toInt()
         val radius = artPx / 6f
         val art = PlayerState.art
         rv.setImageViewBitmap(R.id.art,
-            if (art != null) Art.rounded(art, artPx, radius, prefs.textShadow)
+            if (hidden) Art.clear(artPx, artPx)
+            else if (art != null) Art.rounded(art, artPx, radius, prefs.textShadow)
             else Art.placeholder(artPx, radius))
 
         // Text column width = widget width - padding - art - gap.
@@ -74,14 +66,16 @@ object WidgetUpdater {
         val light = if (prefs.artAccent) PlayerState.accentLight else PlayerState.CREAM
         val title = if (PlayerState.hasTrack) PlayerState.title else "Nothing playing"
         val artist = if (PlayerState.hasTrack) PlayerState.artist else "Spotify"
-        rv.setImageViewBitmap(R.id.title, Art.text(title, textWidthPx, titleSize, true,
-            PlayerState.CREAM, prefs.ghostText, light, acc, prefs.textShadow))
-        rv.setImageViewBitmap(R.id.artist, Art.text(artist, textWidthPx, artistSize, false,
-            0xF5FFEFD6.toInt(), prefs.ghostText, light, acc, prefs.textShadow))
+        val t = Art.text(title, textWidthPx, titleSize, true,
+            PlayerState.CREAM, prefs.ghostText, light, acc, prefs.textShadow)
+        val a = Art.text(artist, textWidthPx, artistSize, false,
+            0xF5FFEFD6.toInt(), prefs.ghostText, light, acc, prefs.textShadow)
+        rv.setImageViewBitmap(R.id.title, if (hidden) Art.clear(t.width, t.height) else t)
+        rv.setImageViewBitmap(R.id.artist, if (hidden) Art.clear(a.width, a.height) else a)
 
-        rv.setImageViewBitmap(R.id.progress, Art.progressBar(
-            ((widthDp - 12) * d).toInt(), (5 * d).toInt(),
-            PlayerState.progress(SystemClock.elapsedRealtime()), acc))
+        val p = Art.progressBar(((widthDp - 12) * d).toInt(), (5 * d).toInt(),
+            PlayerState.progress(SystemClock.elapsedRealtime()), acc)
+        rv.setImageViewBitmap(R.id.progress, if (hidden) Art.clear(p.width, p.height) else p)
 
         wireButtons(context, rv, acc, soft)
         return rv

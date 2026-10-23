@@ -91,6 +91,10 @@ class OverlayService : Service() {
             gravity = Gravity.TOP or Gravity.START
             x = if (full) 0 else r.left
             y = if (full) 0 else r.top
+            // Node bounds are absolute screen coords; make the window use the same origin
+            // instead of being pushed below the status bar / cutout.
+            if (Build.VERSION.SDK_INT >= 30) layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS
+            else layoutInDisplayCutoutMode = WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         }
     }
 
