@@ -40,31 +40,30 @@ class OverlayView(context: Context) : View(context) {
 
     private val d = resources.displayMetrics.density
 
-    // ---- waveform
-    private var wave = FloatArray(96)
-    private var target = FloatArray(96)
+    // ---- water: loudness drives swell height, phase scrolls with time
+    private var energy = 0f          // smoothed loudness 0..1
+    private var targetEnergy = 0f
+    private var phase = 0f
+    private var lastFrame = 0L
     private var lastWaveAt = 0L
 
     fun pushWaveform(pcm: ByteArray) {
-        val n = target.size
-        val step = pcm.size.toFloat() / n
-        for (i in 0 until n) {
-            // average a window of samples so the line doesn't jitter
-            val a = (i * step).toInt(); val b = ((i + 1) * step).toInt().coerceAtMost(pcm.size)
-            var sum = 0f; var c = 0
-            for (k in a until b) { sum += ((pcm[k].toInt() and 0xFF) - 128) / 128f; c++ }
-            target[i] = if (c > 0) sum / c else 0f
-        }
+        var sum = 0.0
+        for (b in pcm) { val v = ((b.toInt() and 0xFF) - 128) / 128.0; sum += v * v }
+        val rms = Math.sqrt(sum / pcm.size).toFloat()
+        // music RMS lives around 0.05..0.4; map that to 0..1 with some headroom
+        targetEnergy = ((rms - 0.03f) / 0.3f).coerceIn(0f, 1f)
         lastWaveAt = SystemClock.elapsedRealtime()
-        postInvalidateOnAnimation()
     }
 
-    private fun stepWave() {
-        val idle = SystemClock.elapsedRealtime() - lastWaveAt > 400 || !PlayerState.playing
-        for (i in wave.indices) {
-            val t = if (idle) 0f else target[i]
-            wave[i] += (t - wave[i]) * 0.35f
-        }
+    private fun stepWater() {
+        val now = SystemClock.elapsedRealtime()
+        val dt = if (lastFrame == 0L) 16L else (now - lastFrame).coerceIn(0, 100)
+        lastFrame = now
+        val idle = now - lastWaveAt > 500 || !PlayerState.playing
+        val t = if (idle) 0f else targetEnergy
+        energy += (t - energy) * (if (t > energy) 0.25f else 0.08f)
+        phase += dt / 1000f * (1.6f + energy * 3f)
     }
 
     // ---- paints
@@ -131,40 +130,53 @@ class OverlayView(context: Context) : View(context) {
         y += 4 * d
         drawText(c, artist, textLeft, y, textW, artistSize, false, 0xF5FFEFD6.toInt(), light, acc)
 
-        // waveform-as-progress
-        stepWave()
+        // water on the progress bar
+        stepWater()
         val barTop = colTop + artSz + 10 * d
-        val midY = barTop + 3 * d
+        val barH = 6 * d
+        val barBottom = barTop + barH
         val barLeft = left + pad; val barW = w - pad * 2
         val progress = PlayerState.progress(SystemClock.elapsedRealtime())
-        val amp = 16 * d
-        path.reset()
-        val n = wave.size
-        for (i in 0 until n) {
-            val x = barLeft + barW * i / (n - 1)
-            val yy = midY - wave[i] * amp
-            if (i == 0) path.moveTo(x, yy) else path.lineTo(x, yy)
-        }
-        line.strokeWidth = 3.5f * d
-        glow.strokeWidth = 9 * d
-        glow.maskFilter = BlurMaskFilter(5 * d, BlurMaskFilter.Blur.NORMAL)
-        // unplayed part: dim cream
-        c.save()
-        c.clipRect(barLeft + barW * progress, top, left + w, top + h)
-        line.color = 0x59FFF4E0
-        c.drawPath(path, line)
-        c.restore()
-        // played part: accent with glow
-        c.save()
-        c.clipRect(left, top, barLeft + barW * progress, top + h)
-        glow.color = Art.withAlpha(acc, 0x80); c.drawPath(path, glow)
-        line.color = acc; c.drawPath(path, line)
-        c.restore()
-        // playhead dot
         val px = barLeft + barW * progress
-        val idx = ((n - 1) * progress).toInt().coerceIn(0, n - 1)
-        fill.shader = null; fill.color = light
-        c.drawCircle(px, midY - wave[idx] * amp, 3.5f * d, fill)
+        val r = barH / 2
+
+        // track
+        fill.shader = null; fill.maskFilter = null; fill.color = 0x59FFF4E0
+        c.drawRoundRect(RectF(barLeft, barTop, barLeft + barW, barBottom), r, r, fill)
+
+        // water body: surface rises above the bar over the played part
+        val swell = 4 * d + energy * 18 * d
+        path.reset()
+        path.moveTo(barLeft, barBottom)
+        val steps = 72
+        for (i in 0..steps) {
+            val x = barLeft + (px - barLeft) * i / steps
+            val u = (x - barLeft) / (12 * d)
+            val s1 = Math.sin((u * 0.9f + phase * 2.1f).toDouble()).toFloat()
+            val s2 = Math.sin((u * 1.7f - phase * 3.3f + 1.3f).toDouble()).toFloat()
+            val s3 = Math.sin((u * 0.35f + phase * 0.8f).toDouble()).toFloat()
+            // taper the swell near the leading edge so it meets the bar cleanly
+            val edge = ((px - x) / (28 * d)).coerceIn(0f, 1f)
+            val y = barBottom - r - swell * edge * (0.55f * s1 + 0.3f * s2 + 0.15f * s3 + 0.9f) * 0.5f
+            path.lineTo(x, y)
+        }
+        path.lineTo(px, barBottom)
+        path.close()
+        glow.maskFilter = BlurMaskFilter(6 * d, BlurMaskFilter.Blur.NORMAL)
+        glow.style = Paint.Style.FILL; glow.color = Art.withAlpha(acc, 0x66)
+        c.drawPath(path, glow)
+        glow.style = Paint.Style.STROKE
+        fill.color = Art.withAlpha(acc, 0xCC)
+        c.drawPath(path, fill)
+        // bright crest line
+        line.strokeWidth = 2 * d; line.maskFilter = null; line.color = light
+        c.save(); c.clipRect(barLeft, top, px, barBottom - r); c.drawPath(path, line); c.restore()
+        // solid played bar underneath so it reads as progress even when the water is calm
+        fill.color = acc
+        c.drawRoundRect(RectF(barLeft, barTop, maxOf(px, barLeft + barH), barBottom), r, r, fill)
+        // playhead
+        fill.color = light
+        c.drawCircle(px, barTop + r, 4 * d, fill)
     }
 
     /** Draws one ellipsized line; returns the y below it. */
