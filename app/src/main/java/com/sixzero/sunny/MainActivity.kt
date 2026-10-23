@@ -70,6 +70,8 @@ class MainActivity : AppCompatActivity() {
         s.append('\n')
         s.append(if (!SessionWatcher.started) "Session watch: off (grant notification access)"
                  else "Session watch: on, sessions seen: ${MediaWatcher.lastSeen.ifEmpty { listOf("none") }.joinToString()}")
+        s.append("\nHome detect: ${if (HomeDetector.instance == null) "service not running" else "on home=${HomeDetector.onHome}, launcher=${HomeDetector.launcher}"}")
+        s.append("\nLocate: ${HomeDetector.lastResult}")
         if (PlayerState.hasTrack) s.append("\nNow: ${PlayerState.title} — ${PlayerState.artist}${if (PlayerState.playing) " (playing)" else " (paused)"}")
         findViewById<TextView>(R.id.status).text = s
         refreshWidgets()
