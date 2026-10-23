@@ -63,15 +63,35 @@ class HomeDetector : AccessibilityService() {
                 }
                 if (home) scheduleLocate()
             }
-            AccessibilityEvent.TYPE_VIEW_SCROLLED, AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
-                // Page swipes and widget moves: follow the widget quickly, hide when it leaves.
-                if (onHome && (pkg == launcher || launchers.contains(pkg))) scheduleLocate(60)
+            AccessibilityEvent.TYPE_VIEW_SCROLLED, AccessibilityEvent.TYPE_VIEW_CLICKED,
+            AccessibilityEvent.TYPE_TOUCH_INTERACTION_START -> {
+                // Something is moving or about to open: vanish now, come back once things settle.
+                if (onHome) { hideNow(); scheduleLocate(if (event.eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED) 220 else 350) }
+            }
+            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED -> {
+                if (onHome && (pkg == launcher || launchers.contains(pkg)) && !widgetVisible) scheduleLocate(80)
             }
             AccessibilityEvent.TYPE_WINDOWS_CHANGED -> {
                 // Our own overlay attaching/detaching fires this too; don't rescan for that.
-                if (onHome && android.os.SystemClock.elapsedRealtime() - OverlayService.lastLayoutAt > 1200) scheduleLocate()
+                if (android.os.SystemClock.elapsedRealtime() - OverlayService.lastLayoutAt < 1200) return
+                // A foreign window (app, shade, recents) just appeared: hide before it finishes animating in.
+                val foreign = try {
+                    windows?.any { w ->
+                        val p = w.root?.packageName?.toString() ?: return@any false
+                        w.type == android.view.accessibility.AccessibilityWindowInfo.TYPE_APPLICATION &&
+                            p != packageName && p != launcher && !launchers.contains(p)
+                    } ?: false
+                } catch (_: Exception) { false }
+                if (foreign) hideNow() else if (onHome) scheduleLocate()
             }
         }
+    }
+
+    /** Drop the overlay immediately; locate() will bring it back when the widget is settled. */
+    private fun hideNow() {
+        if (!widgetVisible) return
+        widgetVisible = false
+        OverlayService.onStateChanged(this)
     }
 
     private fun scheduleLocate(delay: Long = 150) {

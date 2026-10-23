@@ -249,7 +249,9 @@ class OverlayService : Service() {
             val prefs = Prefs(context)
             val svc = instance
             if (!prefs.visualizerOn) { svc?.stopSelf(); return }
-            if (svc != null) svc.main.post { svc.refresh() }
+            if (svc != null) {
+                if (Looper.myLooper() == Looper.getMainLooper()) svc.refresh() else svc.main.post { svc.refresh() }
+            }
             else if (canOverlay(context)) {
                 try { context.startForegroundService(Intent(context, OverlayService::class.java)) }
                 catch (e: Exception) { android.util.Log.w(TAG, "could not start", e) }
