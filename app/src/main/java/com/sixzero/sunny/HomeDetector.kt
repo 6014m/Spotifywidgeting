@@ -20,9 +20,31 @@ class HomeDetector : AccessibilityService() {
         onHome = true   // assume home until told otherwise
         OverlayService.onStateChanged(this)
         scheduleLocate()
+        main.removeCallbacks(heartbeat)
+        main.postDelayed(heartbeat, 1000)
     }
 
     private var retries = 0
+
+    /**
+     * Events alone miss some returns to the home screen, so once a second we
+     * look at which window is actually in front and re-locate if it's home.
+     * Cheap: a tree walk only happens while on home.
+     */
+    private val heartbeat = object : Runnable {
+        override fun run() {
+            try {
+                val front = windows?.firstOrNull { it.isActive || it.isFocused }
+                val pkg = front?.root?.packageName?.toString()
+                if (pkg != null && pkg != packageName) {
+                    val home = pkg == launcher || launchers.contains(pkg)
+                    if (home != onHome) { onHome = home; OverlayService.onStateChanged(this@HomeDetector) }
+                }
+                if (onHome && !OverlayService.active) locateWidget()
+            } catch (_: Exception) {}
+            main.postDelayed(this, 1000)
+        }
+    }
 
     private val main = android.os.Handler(android.os.Looper.getMainLooper())
     private val locate = Runnable { locateWidget() }
@@ -134,6 +156,7 @@ class HomeDetector : AccessibilityService() {
     override fun onInterrupt() {}
 
     override fun onDestroy() {
+        main.removeCallbacksAndMessages(null)
         if (instance === this) instance = null
         onHome = true
         super.onDestroy()
