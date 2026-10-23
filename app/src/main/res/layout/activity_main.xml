@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp">
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="Sunny Widgets" android:textSize="26sp" android:textStyle="bold" android:textColor="#FFB347" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="4dp" android:text="Transparent Spotify widgets + audio visualizer" />
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="24dp" android:text="Permissions" android:textSize="18sp" android:textColor="#FFD08A" />
+
+    <Button android:id="@+id/btnNotif" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="1. Notification access (reads now playing)" />
+    <Button android:id="@+id/btnOverlay" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="2. Draw over other apps (visualizer)" />
+    <Button android:id="@+id/btnMic" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="3. Microphone (needed to read audio output)" />
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="24dp" android:text="Widget style" android:textSize="18sp" android:textColor="#FFD08A" />
+    <Switch android:id="@+id/swGhost" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="Ghost text (outline with album-art gradient)" />
+    <Switch android:id="@+id/swShadow" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Warm shadow under text" />
+    <Switch android:id="@+id/swArtAccent" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="Accent follows album art" />
+
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="24dp" android:text="Visualizer" android:textSize="18sp" android:textColor="#FFD08A" />
+    <Switch android:id="@+id/swViz" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="Show visualizer overlay while music plays" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" android:text="Bar height" />
+    <SeekBar android:id="@+id/sbHeight" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:max="300" android:progress="120" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" android:text="Bar count" />
+    <SeekBar android:id="@+id/sbBars" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:max="64" android:progress="36" />
+    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="12dp" android:text="Opacity" />
+    <SeekBar android:id="@+id/sbAlpha" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:max="255" android:progress="200" />
+    <Switch android:id="@+id/swMirror" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:layout_marginTop="8dp" android:text="Mirror bars from the center" />
+
+    <TextView android:id="@+id/status" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:layout_marginTop="24dp" android:textColor="#B3FFE6C2" android:text="" />
+</LinearLayout>
+</ScrollView>

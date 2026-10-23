@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Sunny Widgets</string>
+    <string name="widget_player">Sunny Player</string>
+    <string name="widget_player_desc">Transparent now-playing with controls</string>
+    <string name="widget_mini">Sunny Mini</string>
+    <string name="widget_mini_desc">One-line now-playing strip</string>
+</resources>

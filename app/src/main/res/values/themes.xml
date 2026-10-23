@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Sunny" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="android:windowBackground">#141010</item>
+        <item name="android:textColor">#FFF4E0</item>
+        <item name="colorAccent">#FFB347</item>
+    </style>
+</resources>
