@@ -27,7 +27,7 @@
     <Button android:id="@+id/btnFiles" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:layout_marginTop="8dp" android:text="5. All files access — lets it read your wallpaper" />
     <Button android:id="@+id/btnCalibrate" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:layout_marginTop="16dp" android:text="6. Line the live layer up with the widget" />
+        android:layout_marginTop="16dp" android:textColor="#B3FFE6C2" android:text="Manual lineup (only if auto-locate misses)" />
 
     <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:layout_marginTop="24dp" android:text="Style" android:textSize="18sp" android:textColor="#FFD08A" />

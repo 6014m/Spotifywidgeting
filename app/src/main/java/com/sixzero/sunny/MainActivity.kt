@@ -66,7 +66,7 @@ class MainActivity : AppCompatActivity() {
         line(OverlayService.hasMic(this), "Microphone", "wave stays flat")
         line(HomeDetector.isEnabled(this), "Accessibility", "overlay can't tell when you leave home")
         line(Wallpaper.readable, "All files access", "inverted text falls back to outline")
-        line(prefs.calibrated, "Live layer positioned", "tap step 6")
+        line(prefs.calibrated, if (prefs.autoLocated) "Widget located automatically" else "Live layer positioned (manual)", "add the Sunny Player widget, go home once, or use the manual button")
         s.append('\n')
         s.append(if (MediaWatcher.instance == null) "Listener: not connected (toggle notification access off and on)"
                  else "Listener: connected, sessions seen: ${MediaWatcher.lastSeen.ifEmpty { listOf("none") }.joinToString()}")

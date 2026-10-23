@@ -113,7 +113,7 @@ class OverlayService : Service() {
         val prefs = Prefs(this)
         val v = ensureView()
         if (v.calibrating) return
-        val shouldShow = prefs.visualizerOn && prefs.calibrated && screenOn && HomeDetector.onHome
+        val shouldShow = prefs.visualizerOn && prefs.calibrated && screenOn && HomeDetector.onHome && HomeDetector.widgetVisible
         if (!shouldShow) {
             stopCapture()
             detach()

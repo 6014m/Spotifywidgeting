@@ -56,6 +56,11 @@ class Prefs(context: Context) {
         set(v) = sp.edit().putInt("rh", v).apply()
     val calibrated: Boolean get() = rectWidth > 0 && rectHeight > 0
 
+    /** True when the rect came from the accessibility lookup rather than manual dragging. */
+    var autoLocated: Boolean
+        get() = sp.getBoolean("auto", false)
+        set(v) = sp.edit().putBoolean("auto", v).apply()
+
     var vizMirror: Boolean
         get() = sp.getBoolean("vizMirror", true)
         set(v) = sp.edit().putBoolean("vizMirror", v).apply()

@@ -4,5 +4,6 @@
     <string name="widget_player_desc">Transparent now-playing with controls</string>
     <string name="widget_mini">Sunny Mini</string>
     <string name="widget_mini_desc">One-line now-playing strip</string>
-    <string name="accessibility_desc">Only used to know when the home screen is in front, so the overlay hides everywhere else. Reads no screen content.</string>
+    <string name="accessibility_desc">Finds the Sunny Player widget on your home screen so the live layer lines up with it, and hides the layer when you leave home. Nothing is logged or sent anywhere.</string>
+    <string name="marker_player">sunny-player-frame</string>
 </resources>
